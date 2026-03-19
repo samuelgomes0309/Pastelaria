@@ -1,0 +1,13 @@
+import { Request, Response } from "express";
+import { FinishOrderService } from "../../services/order/FinishOrderService";
+
+class FinishOrderController {
+	async handle(req: Request, res: Response) {
+		const { order_id } = req.params as { order_id: string };
+		const finishOrderService = new FinishOrderService();
+		const order = await finishOrderService.execute({ order_id });
+		return res.json(order);
+	}
+}
+
+export { FinishOrderController };

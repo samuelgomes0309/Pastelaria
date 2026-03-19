@@ -1,0 +1,149 @@
+// Para criar uma migrate nova = yarn prisma migrate dev // tem que gerar tambem yarn prisma generate
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// Modelo de Usuário
+model User {
+  id       String  @id @default(uuid())
+  name     String
+  email    String  @unique
+  password String
+  role     Role    @default(STAFF)
+  isRoot   Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("users")
+}
+
+// Papeis de Usuário
+enum Role {
+  ADMIN
+  STAFF
+}
+
+// Modelo de Categoria
+model Category {
+  id          String  @id @default(uuid())
+  name        String
+  description String?
+
+  products Product[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("categories")
+}
+
+// Modelo de Produto
+model Product {
+  id          String  @id @default(uuid())
+  name        String
+  description String
+  price       Int
+  bannerUrl   String
+  disabled    Boolean @default(false)
+
+  category_id String
+  category    Category @relation(fields: [category_id], references: [id], onDelete: Cascade)
+
+  itemsOrders       ItemsOrder[]
+  productsOptionals ProductsOptionals[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("products")
+}
+
+// Modelo intermediário entre Produtos e Adicionais
+model ProductsOptionals {
+  id       String  @id @default(uuid())
+  disabled Boolean @default(false)
+
+  product    Product? @relation(fields: [product_id], references: [id])
+  product_id String?
+
+  optional    Optional? @relation(fields: [optional_id], references: [id])
+  optional_id String?
+
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  itemsOptionals ItemsOptionals[]
+
+  @@unique([product_id, optional_id])
+  @@map("products_optionals")
+}
+
+// Modelo de Adicionais
+model Optional {
+  id    String @id @default(uuid())
+  name  String @unique
+  price Int
+
+  productsOptionals ProductsOptionals[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("optionals")
+}
+
+// Modelo de Pedido
+model Order {
+  id     String  @id @default(uuid())
+  table  Int
+  status Boolean @default(false)
+  draft  Boolean @default(true)
+  name   String?
+
+  items ItemsOrder[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("orders")
+}
+
+// Modelo de Itens do Pedido
+model ItemsOrder {
+  id     String @id @default(uuid())
+  amount Int
+
+  order_id String
+  order    Order  @relation(fields: [order_id], references: [id], onDelete: Cascade)
+
+  product_id String
+  product    Product @relation(fields: [product_id], references: [id], onDelete: Cascade)
+
+  itemsOptionals ItemsOptionals[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("items_orders")
+}
+
+// Modelo de itens opcionais
+model ItemsOptionals {
+  id String @id @default(uuid())
+
+  items_order_id String
+  items_order    ItemsOrder @relation(fields: [items_order_id], references: [id], onDelete: Cascade)
+
+  product_optional_id String
+  product_optional    ProductsOptionals @relation(fields: [product_optional_id], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("items_optionals")
+}
